@@ -2,13 +2,13 @@ linuxmuster-nagios-base (0.8.3-0ubuntu1) precise; urgency=low
 
   * debian/control: moved linuxmuster-base to pre-depends.
 
- -- Thomas Schmitt <thomas@linuxmuster.net>  Wed, 27 Mar 2013 21:13:56 +0100
+ -- Thomas Schmitt <thomas@linuxmuster.net>  Wed, 27 Mar 2013 22:15:04 +0100
 
 linuxmuster-nagios-base (0.8.3-0ubuntu0) precise; urgency=low
 
   * more modifications due to ubuntu server.
   * implemented ipfire support for firewall checks.
-  * moved nagios sudoers stuff to /etc/sudoers.d/nagios.
+  * moved nagios sudoers stuff to /etc/sudoers.d/nagios (closes #109).
   * minor improvements for postinst.
   * added linuxmuster-setup stuff for nagios.
 
