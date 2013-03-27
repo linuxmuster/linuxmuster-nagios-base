@@ -1,0 +1,19 @@
+Source: linuxmuster-nagios-base
+Section: debian-linuxmuster
+Priority: optional
+Maintainer: Frank Schiebel <schiebel@aeg-reutlingen.de>
+Build-Depends: debhelper (>= 4.0.0)
+Standards-Version: 3.6.0
+
+Package: linuxmuster-nagios-base
+Section: unknown
+Priority: optional
+Maintainer: Frank Schiebel <schiebel@aeg-reutlingen.de>
+Architecture: i386
+Depends: nagios3, nagios-plugins-basic, dns-browse, nagios-plugins-standard
+Conflicts: linuxmuster-nagios
+Replaces: linuxmuster-nagios
+Description: linuxmuster default configuration for nagios 2.5 
+ This package provides a predefined installation routine to 
+ reach a simple default configuration for a one or two server 
+ setup  of the "linux musterloesung".

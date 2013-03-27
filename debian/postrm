@@ -1,0 +1,4 @@
+#!/bin/bash
+cp /etc/sudoers /etc/sudoers.linuxmuster.nagios
+sed '/# LML-NAGIOS-START/,/# LML-NAGIOS-END/ d' < /etc/sudoers.linuxmuster.nagios > /etc/sudoers
+rm /etc/sudoers.linuxmuster.nagios

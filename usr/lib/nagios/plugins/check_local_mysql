@@ -1,0 +1,26 @@
+#!/bin/bash
+# check_local_mysql nagios plugin for linuxmuster
+# December 2006 Frank Schiebel <schiebel@lmz-bw.de>
+# This software is GPL
+
+thishelp () {
+ echo "Usage check_local_mysl "
+ exit 0
+}
+
+while getopts w:c:h:v opt
+do
+  case $opt in 
+	v)      thishelp	
+		;;
+   esac
+done
+shift $((OPTIND-1))
+
+# get mysqlpassword for root
+MYPASS=`grep -A 3 mysqladmin /root/.my.cnf | grep password | awk '{print $3}'`
+
+# Check for mysql
+mysqladmin -u root --password=$MYPASS ping > /dev/null 2>&1 && echo "mysqld is alive" &&  exit 0
+echo "CRITICAL: cannot connect to mysqld"
+exit 2 

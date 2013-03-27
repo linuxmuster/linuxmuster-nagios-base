@@ -1,0 +1,27 @@
+#!/bin/sh
+## Debian check tool to see if apt-get upgrade is needed or not
+## (c) 2006 by Robert Masse <robert.masse@belmatech.be>
+## release 1
+## Adapted for linuxmuster by Frank Schiebel <schiebel@aeg-reutlingen.de>
+
+if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+	echo "Simple check script to run apt-get update and apt-get upgrade"
+	echo "It doesn't upgrade anything but returns warning if there are available upgrades"
+else
+	DEBIAN_APT="/usr/bin/apt-get"
+	DEBIAN_OUTPUT=$($DEBIAN_APT update)
+	DEBIAN_OUTPUT=$($DEBIAN_APT -s upgrade | grep "^[0-9]")
+	DEBIAN_UPGRADE=$(echo $DEBIAN_OUTPUT | awk '{print $1}')
+	if echo $DEBIAN_OUTPUT | grep "^[0-9]" >/dev/null; then
+	  if [ "$DEBIAN_UPGRADE" -eq 0 ] > /dev/null; then
+	    echo "$DEBIAN_UPGRADE Aktualisierungen vorhanden. System auf aktuellem Stand."
+	    exit 0
+	  else
+	    echo "$DEBIAN_UPGRADE Pakete könnten aktualisiert werden."
+	    exit 1
+	  fi
+	else 
+	  echo "CRITICAL: Keine Ergebnisse von apt-get upgrade erhalten";
+	  exit 2
+	fi
+fi

@@ -1,0 +1,219 @@
+#!/usr/bin/perl -w
+#
+# This Script generates a simple configuration 
+# for nagios 3.x
+#  
+# Frank Schiebel <schiebel@aeg-reutlingen.de>
+
+use Getopt::Long;
+my $first = '';  
+my $force = '';
+
+GetOptions('first' => \$first, 'force' => \$force);
+
+
+my %TEMPLATE;
+my %SUBSTITUTES;
+my %DISK;
+my %REMOTE;
+
+my $LMLCONFIG = "/etc/linuxmuster/nagios.conf";
+my $LMLNETSETTINGS = "/var/lib/linuxmuster/network.settings";
+my $LINUXMUSTER_MAINTEMPLATE = "/var/lib/linuxmuster-nagios/templates/linuxmuster_main.tpl";
+$DISK{'TEMPLATE'} = "/var/lib/linuxmuster-nagios/templates/sub_disk.tpl";
+$REMOTE{'TEMPLATE'} = "/var/lib/linuxmuster-nagios/templates/sub_escalation.tpl";
+my $LINUXMUSTER_MAINCONFIG="/etc/nagios3/conf.d/linuxmuster_main.cfg";
+my $LINUXMUSTER_DEFAULTCONFIG="/var/lib/linuxmuster-nagios/config/nagios3/";
+my $LINUXMUSTER_CUSTOMCONFIG="/var/lib/linuxmuster-nagios/custom_config/nagios3/";
+
+my $SERVER =`hostname`;
+chomp($SERVER);
+my $IPCOP="ipcop";
+
+my @SERVERS = ($SERVER, $IPCOP);
+
+$temp = `host $SERVER`;
+chomp($temp);
+$temp =~ s/^.*\s(.*)$/$1/;
+$IP{$SERVER} = $temp;
+
+$temp = `host $IPCOP`;
+chomp($temp);
+$temp =~ s/^.*\s(.*)$/$1/;
+$IP{$IPCOP} = $temp;
+
+# determine ldap basedn
+$temp = `grep basedn /var/lib/linuxmuster/network.settings`;
+$temp =~ s/.*\"(.*)\"/$1/;
+chomp($temp);
+$SUBSTITUTES{'BASEDN'} = $temp;
+
+#######################################################
+# reset config if required                            #
+#######################################################
+#
+if ($first) {
+ reset_configuration($LINUXMUSTER_DEFAULTCONFIG); 
+ }
+
+#######################################################
+# reading user config file $LMLCONFIG in %SUBSTITUTES #
+# #####################################################
+
+open(CONFIG, $LMLCONFIG) or die "Can't open config file ($LMLCONFIG): $!\n";
+while (<CONFIG>) {
+  chomp;                  # no newline
+  s/#.*//;                # no comments
+  s/^\s+//;               # no leading white
+  s/\s+$//;               # no trailing white
+  next unless length;     # anything left?
+  my ($var, $value) = split(/\s*=\s*/, $_, 2);
+  $SUBSTITUTES{$var} = $value;
+  $SUBSTITUTES{$var} =~ s/\"(.*)\"/$1/; # strip quotes
+} 
+close CONFIG;
+
+
+####################################
+# Configuring remote notifications #
+####################################
+
+if ($SUBSTITUTES{'REMOTE_SUPPORT_EMAIL'}) {
+  $REMOTE{'SERVERNAME'} = $SERVER;
+  my @remote_notifications_services = split ( /\s*\|\s*/ ,$SUBSTITUTES{'REMOTE_SUPPORT_SERVICES'});
+  foreach my $service (@remote_notifications_services) {
+    $REMOTE{'REMOTE_ESCALATION_SERVICENAME'}= $service;
+    $SUBSTITUTES{'ESCALATIONS'} .= create_string_from_template(%REMOTE);
+  }
+}
+
+###########################
+# Configuring disk checks #
+###########################
+
+my @devices = split(/\s+/, $SUBSTITUTES{'DISK_DEVICES'});
+$DISK{'SERVERNAME'} = $SERVER;
+foreach my $device (@devices) {
+  ($DISK{'MOUNTPOINT'}, $DISK{'WARN'}, $DISK{'CRIT'}) = split(":", $device);
+  if($DISK{'MOUNTPOINT'} eq "auto") { # Autodetect HD devices
+     open (MTAB, "/etc/mtab");
+     while(<MTAB>) {
+       if ( /^\/\S+\s+(.+?)\s+.+$/ ) {
+         $DISK{'MOUNTPOINT'} = $1;
+         $SUBSTITUTES{'DISK_CHECKS'} .= create_string_from_template(%DISK);
+         if($SUBSTITUTES{'REMOTE_SUPPORT_EMAIL'}) {
+            $REMOTE{'REMOTE_ESCALATION_SERVICENAME'}= "SYS - disk:$DISK{'MOUNTPOINT'}";
+	    $SUBSTITUTES{'ESCALATIONS'} .= create_string_from_template(%REMOTE);
+	 }
+       }
+     }
+  } else {
+         $SUBSTITUTES{'DISK_CHECKS'} .= create_string_from_template(%DISK);
+         if($SUBSTITUTES{'REMOTE_SUPPORT_EMAIL'}) {
+            $REMOTE{'REMOTE_ESCALATION_SERVICENAME'}= "SYS - disk:$DISK{'MOUNTPOINT'}";
+	    $SUBSTITUTES{'ESCALATIONS'} .= create_string_from_template(%REMOTE);
+	 }
+  }
+}
+close MTAB;
+
+# no remote support?
+
+if(!$SUBSTITUTES{'REMOTE_SUPPORT_EMAIL'}) {
+  $SUBSTITUTES{'REMOTE_SUPPORT_EMAIL'} = 'none@nowhere.xx';
+  $SUBSTITUTES{'ESCALATIONS'}  = "" ;
+}
+
+#######################################
+# preparing to parse main config file #
+#######################################
+
+$SUBSTITUTES{'FWIP'} = $IP{$IPCOP};
+$SUBSTITUTES{'FWNAME'} = $IPCOP;
+$SUBSTITUTES{'SERVERIP'} = $IP{$SERVER};
+$SUBSTITUTES{'SERVERNAME'} = $SERVER;
+$SUBSTITUTES{'TEMPLATE'} = $LINUXMUSTER_MAINTEMPLATE;
+$SUBSTITUTES{'OUTFILE'} = $LINUXMUSTER_MAINCONFIG;
+
+# empty config file
+system("echo '' > $LINUXMUSTER_MAINCONFIG");
+
+create_configfile_from_template(%SUBSTITUTES);
+exit 0;
+
+###########################################################################
+# this function parses the content of a hash in a given template and 
+# outputs the result in a given (config-) file:
+#  * Template is given in $SUBST{'TEMPLATE'}
+#  * Outfile is given in $SUBST{'OUTFILE'}
+############################################################################
+
+sub create_configfile_from_template {
+  my %subst = (@_);
+  open(TEMPLATE_IN, $subst{'TEMPLATE'}) or die "Can't open template file ($template_file): $!\n";
+  open(OUT, ">>$subst{'OUTFILE'}") or die "Can't open template file ($template_file): $!\n";
+  while(<TEMPLATE_IN>) {
+  foreach $key (sort keys %subst) {
+      s/\#\#\#\#$key\#\#\#\#/$subst{$key}/g;
+   }
+   print OUT;
+  }
+  close TEMPLATE_IN;
+  close OUT;
+}
+
+
+###########################################################################
+# this function parses the content of a hash in a given template and 
+# returns the result as a string:
+#  * Template is given in $SUBST{'TEMPLATE'}
+############################################################################
+
+
+sub create_string_from_template {
+  my %subst = (@_);
+  my $string = "";
+  open(TEMPLATE_IN, $subst{'TEMPLATE'}) or die "Can't open template file ($subst{'TEMPLATE'}): $!\n";
+  while($line=<TEMPLATE_IN>) {
+  foreach $key (sort keys %subst) {
+      $line =~ s/\#\#\#\#$key\#\#\#\#/$subst{$key}/g;
+   }
+   $string .= $line;
+  }
+  close TEMPLATE_IN;
+  return $string;
+}
+
+
+###########################################################################
+# this function the nagios configuration to a defined state for 
+# linuxmuster-nagios to work. All previously made changes are lost!
+############################################################################
+
+sub reset_configuration {
+#  my $defconfig = shift(@_); 
+  if (!$force) {
+    print "This command resets the nagios configuration to a default state.\n";
+    print "*** ALL CONFIGURATION FILES IN THE DIRECTORY /etc/nagios3/ WILL BE LOST! ***\n";
+    print "Do you really want to proceed [yes/no]? ";
+  my $answer = <STDIN>;
+  chop($answer);
+   if ($answer eq "yes" ) {
+     system("if [ ! -d /var/backup/linuxmuster/nagios ]; then mkdir -p /var/backup/linuxmuster/nagios; fi");
+     system("tar -cvzf /var/backup/linuxmuster/nagios/lastconfig.tgz /etc/nagios3/ > /dev/null 2>&1");
+     system("if [ -d /etc/nagios3 ]; then rm -rf /etc/nagios3/; fi");
+     system("cp -ar $LINUXMUSTER_DEFAULTCONFIG /etc/");
+     system("cp -ar $LINUXMUSTER_CUSTOMCONFIG /etc/");
+     print "OK - configuration reset to default.\n";
+     print "In case of emergency, you will find a tarfile of your last\n";
+     print "configuration in /var/backup/linuxmuster/nagios/lastconfig.tgz\n"
+   } else {
+     print "OK - keeping current configuration\n";
+     exit 1;
+   }
+  } else {
+     system("if [ -d /etc/nagios3 ]; then rm -rf /etc/nagios3/; fi");
+     system("cp -ar $LINUXMUSTER_DEFAULTCONFIG /etc/");
+     system("cp -ar $LINUXMUSTER_CUSTOMCONFIG /etc/");
+  }
+}

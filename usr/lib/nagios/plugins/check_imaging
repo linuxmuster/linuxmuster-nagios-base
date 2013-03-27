@@ -1,0 +1,43 @@
+#!/bin/sh
+## Nagios Plugin to check if lml imaging services on <server> are alive
+## (c) 2006 by Frank Schiebel <schiebel@aeg-reutlingen.de>
+## release 0.1
+
+# which imaging?
+imaging=`grep imaging /var/lib/linuxmuster/network.settings | sed "s/^.*=\(.*\)$/\1/"`
+# which ist lsof?
+LSOF=`which lsof`
+
+# Help?
+if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+	echo "Simple check script to check if imaging ist alive on lacal host"
+	exit 0
+fi
+
+# REMBO ###################
+if [ $imaging = "rembo" ]; then
+  OUTPUT=$($LSOF -i UDP:67 -i UDP:4011 -i UDP:69 -i UDP:4015 -i UDP:4012 -i UDP:4013 | /bin/grep rembo)
+  OUTPUT_NUM=$($LSOF -i UDP:67 -i UDP:4011 -i UDP:69 -i UDP:4015 -i UDP:4012 -i UDP:4013 | /bin/grep -c rembo)
+  if [ "$OUTPUT_NUM" -eq 7 ] > /dev/null; then
+    echo "$OUTPUT_NUM Rembo Dienste, REMBO-Imaging OK"
+    exit 0
+  else
+    echo "Rembo Dienste nicht verfügbar!"
+    exit 2
+  fi
+fi
+
+# Linbo
+if [ $imaging = "linbo" ]; then
+  N_TFTP=$($LSOF -i UDP:69  | /bin/grep -c atftpd)
+  N_RSYNC=$($LSOF -i TCP:873  | /bin/grep -c rsync)
+  if [ $N_TFTP -ge 1 -a $N_RSYNC -ge 1 ] > /dev/null; then
+    echo "LINBO-Imaging OK (atftp:${N_TFTP}Proc(s) rsync:${N_RSYNC}Proc(s))"
+    exit 0
+  else
+    echo "Linbo Imaging Dienste nicht verfügbar!"
+  fi
+
+fi
+
+# Tivoli
