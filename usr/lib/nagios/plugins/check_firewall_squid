@@ -1,0 +1,14 @@
+#!/bin/bash
+
+. /usr/share/linuxmuster/config/dist.conf || exit 1
+. $HELPERFUNCTIONS || exit 1
+
+case $fwconfig in
+ ipcop|ipfire) ;;
+ *) echo "Nothing to do for custom firewall."
+    exit 0 ;;
+esac
+
+/usr/lib/nagios/plugins/check_tcp -H $fwconfig -p 800 -4 ; RC="$?"
+
+exit "$RC"

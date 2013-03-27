@@ -1,0 +1,17 @@
+# configure linuxmuster-nagios
+# thomas@linuxmuster.net
+# 27.03.2013
+#
+
+if [ "$1" = "--first" ]; then
+ linuxmuster-nagios-setup --first --force
+else
+ linuxmuster-nagios-setup
+fi
+
+backup_file /etc/nagios3/apache2.conf
+sed -e "s|###basedn###|$basedn|" /var/lib/linuxmuster-nagios/templates/apache2.conf.tpl > /etc/nagios3/apache2.conf
+
+# starting nagios3
+/etc/init.d/nagios3 start
+

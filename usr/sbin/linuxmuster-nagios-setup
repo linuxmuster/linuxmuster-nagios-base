@@ -4,8 +4,15 @@
 # for nagios 3.x
 #  
 # Frank Schiebel <schiebel@aeg-reutlingen.de>
+#
+# modified for linuxmuster.net
+# 27.03.2013
+# thomas@linuxmuster.net
+#
 
 use Getopt::Long;
+use Env::Bash;
+
 my $first = '';  
 my $force = '';
 
@@ -26,27 +33,21 @@ my $LINUXMUSTER_MAINCONFIG="/etc/nagios3/conf.d/linuxmuster_main.cfg";
 my $LINUXMUSTER_DEFAULTCONFIG="/var/lib/linuxmuster-nagios/config/nagios3/";
 my $LINUXMUSTER_CUSTOMCONFIG="/var/lib/linuxmuster-nagios/custom_config/nagios3/";
 
-my $SERVER =`hostname`;
-chomp($SERVER);
-my $IPCOP="ipcop";
+# read $LMLNETSETTINGS
+my %LML_ENV;
+tie %LML_ENV, 'Env::Bash', Source => $LMLNETSETTINGS;
 
-my @SERVERS = ($SERVER, $IPCOP);
+my $SERVER = $LML_ENV{servername};
+my $FIREWALL = $LML_ENV{fwconfig};
+my $DOMAINNAME = $LML_ENV{domainname};
 
-$temp = `host $SERVER`;
-chomp($temp);
-$temp =~ s/^.*\s(.*)$/$1/;
-$IP{$SERVER} = $temp;
+my @SERVERS = ($SERVER, $FIREWALL);
 
-$temp = `host $IPCOP`;
-chomp($temp);
-$temp =~ s/^.*\s(.*)$/$1/;
-$IP{$IPCOP} = $temp;
+$IP{$SERVER} = $LML_ENV{serverip};
+$IP{$FIREWALL} = $LML_ENV{ipcopip};
 
 # determine ldap basedn
-$temp = `grep basedn /var/lib/linuxmuster/network.settings`;
-$temp =~ s/.*\"(.*)\"/$1/;
-chomp($temp);
-$SUBSTITUTES{'BASEDN'} = $temp;
+$SUBSTITUTES{'BASEDN'} = $LML_ENV{basedn};
 
 #######################################################
 # reset config if required                            #
@@ -92,7 +93,7 @@ if ($SUBSTITUTES{'REMOTE_SUPPORT_EMAIL'}) {
 ###########################
 
 my @devices = split(/\s+/, $SUBSTITUTES{'DISK_DEVICES'});
-$DISK{'SERVERNAME'} = $SERVER;
+$DISK{'SERVERNAME'} = "${SERVER}.${DOMAINNAME}";
 foreach my $device (@devices) {
   ($DISK{'MOUNTPOINT'}, $DISK{'WARN'}, $DISK{'CRIT'}) = split(":", $device);
   if($DISK{'MOUNTPOINT'} eq "auto") { # Autodetect HD devices
@@ -128,10 +129,10 @@ if(!$SUBSTITUTES{'REMOTE_SUPPORT_EMAIL'}) {
 # preparing to parse main config file #
 #######################################
 
-$SUBSTITUTES{'FWIP'} = $IP{$IPCOP};
-$SUBSTITUTES{'FWNAME'} = $IPCOP;
+$SUBSTITUTES{'FWIP'} = $IP{$FIREWALL};
+$SUBSTITUTES{'FWNAME'} = "${FIREWALL}.${DOMAINNAME}";
 $SUBSTITUTES{'SERVERIP'} = $IP{$SERVER};
-$SUBSTITUTES{'SERVERNAME'} = $SERVER;
+$SUBSTITUTES{'SERVERNAME'} = "${SERVER}.${DOMAINNAME}";
 $SUBSTITUTES{'TEMPLATE'} = $LINUXMUSTER_MAINTEMPLATE;
 $SUBSTITUTES{'OUTFILE'} = $LINUXMUSTER_MAINCONFIG;
 

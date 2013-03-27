@@ -1,0 +1,15 @@
+# /etc/sudoers.d/nagios
+#
+# thomas@linuxmuster.net
+# 27.03.2013
+#
+
+Cmnd_Alias  NAGIOS_CHECKS=/usr/lib/nagios/plugins/check_debian, \ 
+                          /usr/lib/nagios/plugins/check_imaging, \
+                          /usr/lib/nagios/plugins/check_local_mysql, \ 
+                          /usr/lib/nagios/plugins/check_local_pgsql, \ 
+                          /usr/lib/nagios/plugins/check_cups, \
+                          /usr/lib/nagios/plugins/check_firewall_ssh, \
+                          /usr/lib/nagios/plugins/check_firewall_squid
+nagios  ALL=NOPASSWD: NAGIOS_CHECKS
+

@@ -1,8 +1,0 @@
-#!/bin/bash
-
-SSHCONNECT="ssh -p 222 ipcop"
-
-case $1 in
- "load") $SSHCONNECT uptime
-;;
-esac

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+. /usr/share/linuxmuster/config/dist.conf || exit 1
+. $HELPERFUNCTIONS || exit 1
+
+RC=0
+
+case $fwconfig in
+ ipcop|ipfire) ;;
+ *) echo "Nothing to do for custom firewall."
+    exit "$RC" ;;
+esac
+
+ssh -p 222 $ipcopip uptime || RC="2"
+
+exit "$RC"

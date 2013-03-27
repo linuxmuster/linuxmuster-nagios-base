@@ -8,9 +8,9 @@ Standards-Version: 3.6.0
 Package: linuxmuster-nagios-base
 Section: unknown
 Priority: optional
-Maintainer: Frank Schiebel <schiebel@aeg-reutlingen.de>
-Architecture: i386
-Depends: nagios3, nagios-plugins-basic, dns-browse, nagios-plugins-standard
+Architecture: all
+Pre-Depends: linuxmuster-base, nagios3, nagios-plugins-basic, nagios-plugins-standard
+Depends: dns-browse, libenv-bash-perl
 Conflicts: linuxmuster-nagios
 Replaces: linuxmuster-nagios
 Description: linuxmuster default configuration for nagios 2.5 
