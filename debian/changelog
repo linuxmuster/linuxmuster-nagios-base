@@ -1,3 +1,9 @@
+linuxmuster-nagios-base (0.8.3-1ubuntu1) precise; urgency=low
+
+  * check_firewall_ssh: added options "-oNumberOfPasswordPrompts=0 -oStrictHostKeyChecking=no" to ssh command.
+
+ -- Thomas Schmitt <thomas@linuxmuster.net>  Thu, 28 Mar 2013 08:26:20 +0100
+
 linuxmuster-nagios-base (0.8.3-0ubuntu1) precise; urgency=low
 
   * debian/control: moved linuxmuster-base to pre-depends.

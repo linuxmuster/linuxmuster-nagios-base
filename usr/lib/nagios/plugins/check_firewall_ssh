@@ -11,6 +11,6 @@ case $fwconfig in
     exit "$RC" ;;
 esac
 
-ssh -p 222 $ipcopip uptime || RC="2"
+ssh -oNumberOfPasswordPrompts=0 -oStrictHostKeyChecking=no -p 222 $ipcopip uptime || RC="2"
 
 exit "$RC"
