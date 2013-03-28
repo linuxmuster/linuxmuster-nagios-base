@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# thomas@linuxmuster.net
+# 28.03.2013
+# GPL v3
+#
 
 set -e
 
@@ -49,9 +54,12 @@ case "$1" in
 	 sed '/# LML-NAGIOS-START/,/# LML-NAGIOS-END/ d' -i /etc/sudoers
 	 visudo -c
 	fi
-	
-	# secure permissions for /etc/sudoers.d/nagios
-	chmod 440 /etc/sudoers.d/nagios
+
+	# secure permissions for sudoers
+	chown root:root /etc/sudoers* -R
+	chmod 755 /etc/sudoers.d
+	chmod 440 /etc/sudoers
+	chmod 440 /etc/sudoers.d/*
 	visudo -c -f /etc/sudoers.d/nagios
 
 	# Modifying permissions in /var/lib/nagios (debian bug in nagios 2.5)

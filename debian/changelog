@@ -1,3 +1,9 @@
+linuxmuster-nagios-base (0.8.3-3ubuntu1) precise; urgency=low
+
+  * postinst: added complete /etc/sudoers* permissions repair.
+
+ -- Thomas Schmitt <thomas@linuxmuster.net>  Thu, 28 Mar 2013 16:35:54 +0100
+
 linuxmuster-nagios-base (0.8.3-2ubuntu1) precise; urgency=low
 
   * removed obsolete LMZ Fernwartungs stuff.
