@@ -1,3 +1,9 @@
+linuxmuster-nagios-base (0.8.3-4ubuntu1) precise; urgency=low
+
+  * added missing commands.cfg template.
+
+ -- Thomas Schmitt <thomas@linuxmuster.net>  Thu, 28 Mar 2013 17:13:24 +0100
+
 linuxmuster-nagios-base (0.8.3-3ubuntu1) precise; urgency=low
 
   * postinst: added complete /etc/sudoers* permissions repair.
