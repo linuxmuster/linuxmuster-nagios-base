@@ -6,7 +6,7 @@
 #
 # updated for linuxmuster.net
 # thomas@linuxmuster.net
-# 27.03.2013
+# 04.04.2013
 #
 ###############################################################################
 
@@ -476,7 +476,7 @@ define command{
 # 'check_mem' command definition
 define command{
 	command_name    check_mem
-	command_line	/usr/lib/nagios/plugins/check_mem  -w $ARG1$ -c $ARG2$
+	command_line	/usr/bin/perl /usr/lib/nagios/plugins/check_mem  -w $ARG1$ -c $ARG2$
 }
 
 # 'check_local_mysql' command definition

@@ -13,7 +13,6 @@ Pre-Depends: linuxmuster-base, nagios3, nagios-plugins-basic, nagios-plugins-sta
 Depends: dns-browse, libenv-bash-perl
 Conflicts: linuxmuster-nagios
 Replaces: linuxmuster-nagios
-Description: linuxmuster default configuration for nagios 2.5 
+Description: linuxmuster.net default configuration for nagios 3
  This package provides a predefined installation routine to 
- reach a simple default configuration for a one or two server 
- setup  of the "linux musterloesung".
+ reach a simple default configuration for linuxmuster.net.

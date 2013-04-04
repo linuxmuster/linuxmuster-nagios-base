@@ -1,13 +1,14 @@
 #!/bin/bash
 #
 # thomas@linuxmuster.net
-# 28.03.2013
+# 04.04.2013
 # GPL v3
 #
 
 set -e
 
 case "$1" in
+
 	configure)
 
 	# source linuxmuster-base-config
@@ -16,33 +17,23 @@ case "$1" in
 	
 	# basedir holding configuration files for
 	# linuxmuster-nagios
-	LINUXMUSTERNAGIOSBASE=/var/lib/linuxmuster-nagios
+	NAGIOSTPLBASEDIR=/var/lib/linuxmuster-nagios
 
 	# Nagiosconfigfiles
-	NAGIOSCONF=/etc/nagios3
+	NAGIOSCONFDIR=/etc/nagios3
+	APACHENAGIOSCONF="$NAGIOSCONFDIR/apache2.conf"
+	LINUXMUSTERNAGIOSCONF="$SYSCONFDIR/nagios.conf"
 
 	# remove distributed config
-	rm -f /etc/nagios3/conf.d/*nagios2.cfg
+	rm -f $NAGIOSCONFDIR/conf.d/*nagios2.cfg
 
-	# overwrite configuration with 
-	# linuxmuster-nagios-default 
-	# configuration
-	cp -ar $LINUXMUSTERNAGIOSBASE/config/nagios3 /etc/
+	# overwrite configuration with linuxmuster-nagios default configuration
+	cp -ar $NAGIOSTPLBASEDIR/config/nagios3 /etc/
 
-	# provide custom configuration file when necessary
-	if [ ! -f /etc/nagios3/conf.d/linuxmuster_custom.cfg ]; then
-	 cp -a $LINUXMUSTERNAGIOSBASE/custom_config/nagios* /etc/
+	# provide custom configuration file if necessary
+	if [ ! -f "$NAGIOSCONFDIR/conf.d/linuxmuster_custom.cfg" ]; then
+	 cp -a $NAGIOSTPLBASEDIR/custom_config/nagios* /etc/
 	fi
-	
-	# provide commands.cfg & resource.cfg if missing
-	for i in commands resource; do
-	conf="/etc/nagios3/$i.cfg"
-	 if [ ! -e "$i" ]; then
-	  touch "$i"
-      chmod 640 "$i"
-      chgrp nagios "$i"
-	 fi
-	done
 
 	# remove defect nagios2 link in /etc/apache2/conf.d
 	rm -f /etc/apache2/conf.d/nagios2*
@@ -75,12 +66,12 @@ case "$1" in
 
 	# Fixing perm for /etc/nagios3/conf.d - nagios has to own this dir for
 	# nagios-grapher to work
-	chown nagios /etc/nagios3/conf.d
+	chown nagios $NAGIOSCONFDIR/conf.d
 
 	# removing nagios2 config if existent
 	if [ -d /etc/nagios2 ]; then
 	 # backup nagios2 cfg
-	 tar -cvzf /etc/nagios3/nagios2.conf.backup.tgz /etc/nagios2/
+	 tar -cvzf $NAGIOSCONFDIR/nagios2.conf.backup.tgz /etc/nagios2/
 	 # remove nagios2 config
 	 for i in /etc/nagios2 /etc/init.d/nagios2 \
 	          /var/lib/linuxmuster-nagios/config/nagios2 \
@@ -89,12 +80,28 @@ case "$1" in
 	  [ -e "$i" ] && rm -rf "$i"
 	 done
 	fi
+ 
+	# nagios: remove obsolete paedml stuff
+	if grep -q -i paedml "$LINUXMUSTERNAGIOSCONF" || grep -q SSHIPCOP "$LINUXMUSTERNAGIOSCONF"; then
+	 echo "Fixing $LINUXMUSTERNAGIOSCONF."
+	 cp "$LINUXMUSTERNAGIOSCONF" "$LINUXMUSTERNAGIOSCONF.dpkg-bak"
+	 sed -e 's|^DESC_SERVER=.*|DESC_SERVER="linuxmuster.net Server"|
+	         s|^DESC_FW=.*|DESC_FW="linuxmuster.net Firewall"|
+	         s|^DESC_SERVERGROUP=.*|DESC_SERVERGROUP="linuxmuster.net Server"|
+	         s|^SSHIPCOP_PORT|SSHFIREWALL_PORT|' -i "$LINUXMUSTERNAGIOSCONF"
+	fi
+
+	# Fixing auth configuration and DirectoryIndex (#114) in /etc/nagios3/apache2.conf
+	searchstr="AuthLDAPURL ldap://127.0.0.1/$basedn?uid"
+	if ! grep -q "$searchstr" "$APACHENAGIOSCONF" || ! grep -q index.php "$APACHENAGIOSCONF"; then
+	 echo "Fixing $APACHENAGIOSCONF."
+	 tpl="$NAGIOSTPLBASEDIR/templates/apache2.conf.tpl"
+	 cp "$APACHENAGIOSCONF" "$APACHENAGIOSCONF.dpkg-bak"
+	 sed -e "s/###basedn###/$basedn/" "$tpl" > "$APACHENAGIOSCONF"
+	fi
 
 	# tschmitt: do this only if linuxmuster.net is configured
 	if [ -e "$INSTALLED" ]; then
-
-	 # Fixing auth configuration in /etc/nagios3/apache2.conf
-	 sed -e "s/###basedn###/$basedn/" $LINUXMUSTERNAGIOSBASE/templates/apache2.conf.tpl > /etc/nagios3/apache2.conf
 
 	 # configure nagios
 	 /usr/sbin/linuxmuster-nagios-setup

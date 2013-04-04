@@ -1,7 +1,7 @@
 # apache configuration for nagios 3.x
 # note to users of nagios 1.x and 2.x:
 #	throughout this file are commented out sections which preserve
-#	backwards compatibility with bookmarks/config forolder nagios versios.
+#	backwards compatibility with bookmarks/config for older nagios versios.
 #	simply look for lines following "nagios 1.x:" and "nagios 2.x" comments.
 
 ScriptAlias /cgi-bin/nagios3 /usr/lib/cgi-bin/nagios3
